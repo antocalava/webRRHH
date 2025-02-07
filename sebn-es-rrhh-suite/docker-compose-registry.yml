@@ -1,0 +1,52 @@
+version: '3'
+
+services:
+  sebn-es-suite-backend:
+    image: gitlab.sebn.com:5050/scm/sebn-es-rrhh-suite/backend:testing
+    ports:
+      - "8863:8863"
+    environment:
+      - TZ=Europe/Berlin
+      - SECRET_KEY=${SECRET_KEY}
+      - DATABASE_URI=${DATABASE_URI}
+      - DATABASE_NAME=${DATABASE_NAME}
+      - DATABASE_USER=${DATABASE_USER}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - FRONTEND_HOST=${FRONTEND_HOST}
+    restart: unless-stopped
+    networks:
+      - traefik-public
+    deploy:
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=traefik-public"
+        - "traefik.http.routers.sebn-es-suite-backend.rule=Host(`sebn-es-suite-test.sebn.com`) && PathPrefix(`/api`)"
+        - "traefik.http.services.sebn-es-suite-backend.loadbalancer.server.port=8000"
+        - "traefik.http.routers.sebn-es-suite-backend.entrypoints=websecure"
+        - "traefik.http.routers.sebn-es-suite-backend.tls=true"
+        - "traefik.http.routers.sebn-es-suite-backend.middlewares=strip-prefix-api"
+        - "traefik.http.middlewares.strip-prefix-api.stripprefix.prefixes=/api"
+        - "traefik.http.middlewares.strip-prefix-api.stripprefix.forceSlash=false"
+
+  sebn-es-suite-frontend:
+    image: gitlab.sebn.com:5050/scm/sebn-es-rrhh-suite/frontend:testing
+    ports:
+      - "8864:8864"
+    environment:
+      - TZ=Europe/Berlin
+      - VITE_BACKEND_HOST=${VITE_BACKEND_HOST}
+    restart: unless-stopped
+    networks:
+      - traefik-public
+    deploy:
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=traefik-public"
+        - "traefik.http.routers.sebn-es-suite-frontend.rule=Host(`sebn-es-suite-test.sebn.com`)"
+        - "traefik.http.services.sebn-es-suite-frontend.loadbalancer.server.port=8864"
+        - "traefik.http.routers.sebn-es-suite-frontend.entrypoints=websecure"
+        - "traefik.http.routers.sebn-es-suite-frontend.tls=true"
+
+networks:
+  traefik-public:
+    external: true

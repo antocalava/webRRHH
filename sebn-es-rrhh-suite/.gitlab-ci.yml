@@ -1,0 +1,59 @@
+variables:
+  BACKEND_DEPLOY_CURL_COMMAND: 'curl -X POST http://hatdockte1.sebn.com:9000/api/webhooks/9b6ff0df-41d3-4499-a347-baa420ea0cc1'
+  FRONTEND_DEPLOY_CURL_COMMAND: 'curl -X POST http://hatdockte1.sebn.com:9000/api/webhooks/213bd1ea-a5a7-4293-ae9b-71053fec9262'
+
+stages:
+  - build
+  - deploy
+  - tag
+
+build:
+  only:
+    - main
+  except:
+    - tags
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  before_script:
+    - docker login ${CI_REGISTRY} -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD}
+  script:
+    - docker build -t ${CI_REGISTRY_IMAGE}/backend:testing ./backend
+    - docker build -t ${CI_REGISTRY_IMAGE}/frontend:testing ./frontend
+    - docker push ${CI_REGISTRY_IMAGE}/backend:testing
+    - docker push ${CI_REGISTRY_IMAGE}/frontend:testing
+
+deploy:
+  only:
+    - main
+  stage: deploy
+  image: docker:latest
+  before_script:
+    - docker login ${CI_REGISTRY} -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD}
+  script:
+    - sudo yum install curl -y
+    - echo "Deploying the backend using webhook..."
+    - echo $BACKEND_DEPLOY_CURL_COMMAND
+    - 'eval "$BACKEND_DEPLOY_CURL_COMMAND"'
+    - echo "Deploying the frontend using webhook..."
+    - echo $FRONTEND_DEPLOY_CURL_COMMAND
+    - 'eval "$FRONTEND_DEPLOY_CURL_COMMAND"'
+  after_script:
+    - docker logout ${CI_REGISTRY}
+
+tag:
+  only:
+    - tags
+  stage: tag
+  image: docker:latest
+  before_script:
+    - docker login ${CI_REGISTRY} -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD}
+  script:
+    - echo "Building and pushing a tagged Docker image..."
+    - docker build -t ${CI_REGISTRY_IMAGE}/backend:$CI_COMMIT_TAG ./backend
+    - docker build -t ${CI_REGISTRY_IMAGE}/frontend:$CI_COMMIT_TAG ./frontend
+    - docker push ${CI_REGISTRY_IMAGE}/backend:$CI_COMMIT_TAG
+    - docker push ${CI_REGISTRY_IMAGE}/frontend:$CI_COMMIT_TAG
+  after_script:
+    - docker logout ${CI_REGISTRY}
