@@ -1,5 +1,6 @@
 # TODOS ESTOS DATOS SON DE EJEMPLO Y ESTÁN MODIFICADOS A LOS ORIGINALES POR RAZONES ÉTICO/LEGALES.
 
+## Proyecto VUE y backend hecho en Python, con uso de bases de datos.
 ### Los colores y logos no son los originales, están adaptados para que no se vea la imagen de la empresa privada de la que provienen.
 
 ## INTRODUCCIÓN
